@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 # 发送请求的库
 import requests
-
 import bs4
-
+from tqdm import tqdm
 import time
-import pandas as pd
 import json
 
 # 全局设置
@@ -20,7 +18,8 @@ baseurl = "http://www.csres.com/"
 
 session = requests.session()
 session.get(url)
-session.headers=headers
+session.headers = headers
+
 
 # 获取网站信息
 def spide(url, headers):
@@ -38,7 +37,7 @@ def spide(url, headers):
     # 获取页面内容
     content = response.text
 
-    return content,session.cookies
+    return content, session.cookies
 
 
 # 解析网站的信息
@@ -94,30 +93,31 @@ def getdata(content):
 
     # print(lists)
     return lists
+
+
 # todo 现在能爬取一页的数据了，接下来考虑分类爬取并保存
 def spide2(lists):
-    mylist=[]
-    for item in lists:
-        link = baseurl+item[1]
+    mylist = []
+    for item in tqdm(lists):
+        print("正在下载", item[0])
+        # todo 需要在这里循环下一页，对每一页进行爬取
+        link = baseurl + item[1]
         data = session.get(link)
-        soup = bs4.BeautifulSoup(data.text,"html.parser")
+        soup = bs4.BeautifulSoup(data.text, "html.parser")
         thead = soup.find("thead")
         # print(thead)
         try:
-            tr = thead.find_all("tr",bgcolor="#FFFFFF")
+            tr = thead.find_all("tr", bgcolor="#FFFFFF")
             for item in tr:
                 i = item.find_all("td")
-                arr=[]
+                arr = []
                 for j in i:
                     arr.append(j.text)
-                mylist.append(arr)
+                mylist.append([arr[0].split("\xa0")[1], arr[1].split("\xa0")[1], arr[4]])
         finally:
             None
-
+        # data=json.dumps(mylist)
         print(mylist)
-
-
-
 
 
 # 写入数据
@@ -131,14 +131,13 @@ def checkfloder(floderpath):
 
 
 if __name__ == '__main__':
-    #获取第一级内容
-    content,cookies = spide(url, headers)
+    # 获取第一级内容
+    content, cookies = spide(url, headers)
 
-    #解析第一级内容，返回得到二级网页的数组
+    # 解析第一级内容，返回得到二级网页的数组
     lists = getdata(content)
 
-    #打开二级网页,爬取需要的数据
+    # 打开二级网页,爬取需要的数据
     content2 = spide2(lists)
-
 
 # writefile(spide(),"F:\PL\ssl\gbspider","\\test")
